@@ -1,0 +1,7 @@
+.git
+.idea
+.vscode
+*.md
+*.log
+*.gz
+docker-compose.yml
