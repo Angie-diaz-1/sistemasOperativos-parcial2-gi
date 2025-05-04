@@ -69,7 +69,7 @@ jobs:
           docker logs test-container || true
 
           echo "🌐 Haciendo petición al endpoint /health"
-          response=$(curl --retry 5 --retry-delay 3 --fail --silent http://localhost:8080/health)
+          response=$(curl --retry 5 --retry-delay 3 --fail --silent http://localhost:8080/health/)
 
           echo "Respuesta: $response"
 
