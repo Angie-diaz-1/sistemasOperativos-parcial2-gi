@@ -50,7 +50,7 @@ jobs:
         run: |
           docker run -d --name test-container -p 8080:8080 angiediazz/sistemasoperativos-parcial2-gi-api:latest
           echo "⏳ Esperando que arranque el contenedor..."
-          sleep 5
+          sleep 15
           echo "📡 Realizando petición al endpoint /health..."
           response=$(curl -s http://localhost:8080/health)
           echo "Respuesta: $response"
