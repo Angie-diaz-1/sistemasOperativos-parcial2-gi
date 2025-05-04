@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"net/http"
 	"os"
 	"usersProject/controller"
 	"usersProject/database"
@@ -10,6 +12,10 @@ import (
 )
 
 func main() {
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "Hola Docker!")
+	})
+
 	db := database.ConnectMongoDB()
 
 	collectionName := os.Getenv("MONGO_COLLECTION_NAME")
