@@ -9,6 +9,17 @@ jobs:
   build-and-verify:
     runs-on: ubuntu-latest
 
+    services:
+      mongo:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd="mongosh --eval 'db.adminCommand(\"ping\")'" 
+          --health-interval=10s 
+          --health-timeout=5s 
+          --health-retries=5
+
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
@@ -35,7 +46,7 @@ jobs:
             angiediazz/sistemasoperativos-parcial2-gi-api:latest
             angiediazz/sistemasoperativos-parcial2-gi-api:${{ steps.vars.outputs.sha_short }}
 
-      - name: 🧪 Scan Docker image with Trivy
+      - name: 🔍 Scan Docker image with Trivy
         uses: aquasecurity/trivy-action@0.30.0
         with:
           image-ref: angiediazz/sistemasoperativos-parcial2-gi-api:latest
@@ -43,25 +54,27 @@ jobs:
           exit-code: 1
           ignore-unfixed: true
           vuln-type: 'os,library'
-          severity: CRITICAL,HIGH
 
       - name: 🚀 Run container and test healthcheck
         run: |
-          docker run -d --name test-container -p 8080:8080 angiediazz/sistemasoperativos-parcial2-gi-api:latest
+          docker run -d --name test-container --network host angiediazz/sistemasoperativos-parcial2-gi-api:latest
 
           echo "⏳ Esperando que arranque el contenedor..."
-          sleep 5
+          sleep 10
 
           echo "📋 Mostrando contenedores activos:"
           docker ps
 
-          echo "📡 Realizando petición al endpoint /health..."
-          response=$(curl -s http://localhost:8080/health)
+          echo "📡 Logs del contenedor por si falla:"
+          docker logs test-container || true
+
+          echo "🌐 Haciendo petición al endpoint /health"
+          response=$(curl --retry 5 --retry-delay 3 --fail --silent http://localhost:8080/health)
+
           echo "Respuesta: $response"
 
           if [[ "$response" != *"Hola Docker!"* ]]; then
             echo "❌ La respuesta no es válida."
-            docker logs test-container
             docker stop test-container
             docker rm test-container
             exit 1
