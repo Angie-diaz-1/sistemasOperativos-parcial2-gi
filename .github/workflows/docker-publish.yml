@@ -1,4 +1,4 @@
-name: Build and Push Docker Image to Docker Hub
+name: Build, Scan and Push Docker Image
 
 on:
   push:
@@ -19,9 +19,30 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image (without pushing yet)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true
+          tags: angiediazz/sistemasoperativos-parcial2-gi-api:latest,angiediazz/sistemasoperativos-parcial2-gi-api:${{ github.sha }}
+
+      - name: Scan image for vulnerabilities with Trivy
+        uses: aquasecurity/trivy-action@v0.14.0
+        with:
+          image-ref: angiediazz/sistemasoperativos-parcial2-gi-api:latest
+          format: table
+          exit-code: 1
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+
+      - name: Push Docker image
+        if: success()
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: angiediazz/sistemasoperativos-parcial2-gi-api:latest
+          tags: angiediazz/sistemasoperativos-parcial2-gi-api:latest,angiediazz/sistemasoperativos-parcial2-gi-api:${{ github.sha }}
