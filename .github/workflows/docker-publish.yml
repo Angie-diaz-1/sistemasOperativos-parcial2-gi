@@ -32,7 +32,7 @@ jobs:
             angiediazz/sistemasoperativos-parcial2-gi-api:${{ github.run_number }}
 
       - name: 🔍 Scan image for vulnerabilities with Trivy
-        uses: aquasecurity/trivy-action@v0.30.0
+        uses: aquasecurity/trivy-action@0.30.0
         with:
           image-ref: angiediazz/sistemasoperativos-parcial2-gi-api:latest
           format: table
