@@ -45,15 +45,20 @@ jobs:
           vuln-type: 'os,library'
           severity: CRITICAL,HIGH
 
-
       - name: 🚀 Run container and test healthcheck
         run: |
           docker run -d --name test-container -p 8080:8080 angiediazz/sistemasoperativos-parcial2-gi-api:latest
+
           echo "⏳ Esperando que arranque el contenedor..."
-          sleep 15
+          sleep 5
+
+          echo "📋 Mostrando contenedores activos:"
+          docker ps
+
           echo "📡 Realizando petición al endpoint /health..."
           response=$(curl -s http://localhost:8080/health)
           echo "Respuesta: $response"
+
           if [[ "$response" != *"Hola Docker!"* ]]; then
             echo "❌ La respuesta no es válida."
             docker logs test-container
@@ -61,6 +66,7 @@ jobs:
             docker rm test-container
             exit 1
           fi
+
           echo "✅ Contenedor respondió correctamente."
           docker stop test-container
           docker rm test-container
