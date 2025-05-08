@@ -3,9 +3,10 @@ FROM golang:1.24-alpine AS builder
 
 #LABEL about the custom image
 LABEL maintainer="AngieDiaz" \
-    version = "0.1" \
-    description="this is custom docker imagefor the apache services"
-    
+      version="0.1" \
+      description="This is a custom Docker image for the Apache services"
+
+
 WORKDIR /app
 
 # Copiar solo lo necesario
