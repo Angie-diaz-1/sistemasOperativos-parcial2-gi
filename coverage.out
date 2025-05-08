@@ -1,12 +1,5 @@
 mode: set
-usersProject/main.go:12.13,25.2 8 0
-usersProject/database/mongo.go:13.39,17.16 2 0
-usersProject/database/mongo.go:17.16,19.3 1 0
-usersProject/database/mongo.go:21.2,29.16 7 0
-usersProject/database/mongo.go:29.16,31.3 1 0
-usersProject/database/mongo.go:33.2,34.16 2 0
-usersProject/database/mongo.go:34.16,36.3 1 0
-usersProject/database/mongo.go:38.2,39.32 2 0
+usersProject/main.go:12.13,30.2 10 0
 usersProject/repository/user_repository.go:23.83,27.2 1 0
 usersProject/repository/user_repository.go:30.105,32.2 1 0
 usersProject/repository/user_repository.go:35.77,37.16 2 0
@@ -25,6 +18,17 @@ usersProject/repository/user_repository.go:73.2,77.52 2 0
 usersProject/repository/user_repository.go:81.94,83.16 2 0
 usersProject/repository/user_repository.go:83.16,85.3 1 0
 usersProject/repository/user_repository.go:87.2,87.58 1 0
+usersProject/database/mongo.go:13.39,17.16 2 0
+usersProject/database/mongo.go:17.16,19.3 1 0
+usersProject/database/mongo.go:21.2,29.16 7 0
+usersProject/database/mongo.go:29.16,31.3 1 0
+usersProject/database/mongo.go:33.2,34.16 2 0
+usersProject/database/mongo.go:34.16,36.3 1 0
+usersProject/database/mongo.go:38.2,39.32 2 0
+usersProject/controller/health_controller.go:11.46,13.2 1 0
+usersProject/controller/health_controller.go:15.59,17.2 2 0
+usersProject/controller/health_controller.go:17.2,19.3 1 0
+usersProject/controller/health_controller.go:21.55,24.2 1 0
 usersProject/controller/user_controller.go:14.72,16.2 1 1
 usersProject/controller/user_controller.go:18.57,20.2 2 1
 usersProject/controller/user_controller.go:20.2,26.3 5 1

@@ -15,25 +15,21 @@ jobs:
         ports:
           - 27017:27017
         options: >-
-          --health-cmd="mongosh --eval 'db.adminCommand(\"ping\")'" 
-          --health-interval=10s 
-          --health-timeout=5s 
+          --health-cmd="mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval=10s
+          --health-timeout=5s
           --health-retries=5
 
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      - name: ✅ Instalar dependencias
-        run: go mod tidy
-
-      - name: 🧪 Ejecutar pruebas unitarias con cobertura
+      - name: 🧪 Run unit tests and generate coverage
         run: |
-          go test -v ./... -coverprofile=coverage.out
+          go test ./... -coverpkg=./controller,./service,./repository -coverprofile=coverage.out
           go tool cover -func=coverage.out
-
-      - name: ⛔ Fallar si cobertura es menor a 80%
-        run: |
+          
+          echo "✅ Validando cobertura mínima"
           threshold=80.0
           coverage=$(go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
           echo "Cobertura actual: $coverage%"
@@ -62,7 +58,7 @@ jobs:
             angiediazz/sistemasoperativos-parcial2-gi-api:${{ steps.vars.outputs.sha_short }}
 
       - name: 🔍 Scan Docker image with Trivy
-        uses: aquasecurity/trivy-action@0.11.2
+        uses: aquasecurity/trivy-action@0.30.0
         with:
           image-ref: angiediazz/sistemasoperativos-parcial2-gi-api:latest
           format: table
@@ -70,7 +66,7 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
 
-      - name: 🤖 Ejecutar pruebas de integración con contenedor
+      - name: 🚀 Run container and test healthcheck
         run: |
           docker run -d --name test-container --network host angiediazz/sistemasoperativos-parcial2-gi-api:latest
 
@@ -80,12 +76,11 @@ jobs:
           echo "📋 Mostrando contenedores activos:"
           docker ps
 
-          echo "📡 Logs del contenedor por si falla:"
+          echo "📡 Logs del contenedor:"
           docker logs test-container || true
 
-          echo "🌐 Haciendo petición al endpoint /health"
+          echo "🌐 Verificando endpoint de salud"
           response=$(curl --retry 5 --retry-delay 3 --fail --silent http://localhost:8080/health/)
-
           echo "Respuesta: $response"
 
           if [[ "$response" != *"Hola Docker!"* ]]; then
@@ -95,6 +90,6 @@ jobs:
             exit 1
           fi
 
-          echo "✅ Contenedor respondió correctamente."
+          echo "✅ Healthcheck exitoso."
           docker stop test-container
           docker rm test-container
