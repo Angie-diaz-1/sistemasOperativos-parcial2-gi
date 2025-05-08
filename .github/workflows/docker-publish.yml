@@ -24,6 +24,21 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
+      - name: ✅ Instalar dependencias
+        run: go mod tidy
+
+      - name: 🧪 Ejecutar pruebas unitarias con cobertura
+        run: |
+          go test -v ./... -coverprofile=coverage.out
+          go tool cover -func=coverage.out
+
+      - name: ⛔ Fallar si cobertura es menor a 80%
+        run: |
+          threshold=80.0
+          coverage=$(go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
+          echo "Cobertura actual: $coverage%"
+          awk "BEGIN {exit ($coverage < $threshold) ? 1 : 0}"
+
       - name: 🧱 Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -47,7 +62,7 @@ jobs:
             angiediazz/sistemasoperativos-parcial2-gi-api:${{ steps.vars.outputs.sha_short }}
 
       - name: 🔍 Scan Docker image with Trivy
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@v0.30.0
         with:
           image-ref: angiediazz/sistemasoperativos-parcial2-gi-api:latest
           format: table
@@ -55,7 +70,7 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
 
-      - name: 🚀 Run container and test healthcheck
+      - name: 🤖 Ejecutar pruebas de integración con contenedor
         run: |
           docker run -d --name test-container --network host angiediazz/sistemasoperativos-parcial2-gi-api:latest
 
