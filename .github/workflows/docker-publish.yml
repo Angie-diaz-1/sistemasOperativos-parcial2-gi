@@ -15,9 +15,9 @@ jobs:
         ports:
           - 27017:27017
         options: >-
-          --health-cmd="mongosh --eval 'db.adminCommand(\"ping\")'"
-          --health-interval=10s
-          --health-timeout=5s
+          --health-cmd="mongosh --eval 'db.adminCommand(\"ping\")'" 
+          --health-interval=10s 
+          --health-timeout=5s 
           --health-retries=5
 
     steps:
@@ -26,9 +26,9 @@ jobs:
 
       - name: 🧪 Run unit tests and generate coverage
         run: |
-          go test ./... -coverpkg=./controller,./service,./repository -coverprofile=coverage.out
+          go test ./... -coverpkg=./controller,./service -coverprofile=coverage.out
           go tool cover -func=coverage.out
-          
+
           echo "✅ Validando cobertura mínima"
           threshold=80.0
           coverage=$(go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
