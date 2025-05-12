@@ -1,2 +1,2 @@
 # sistemasOperativos-parcial2-gi
-# hola prueba
+# hola prueba 2
