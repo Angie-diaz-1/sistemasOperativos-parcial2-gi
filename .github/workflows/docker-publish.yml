@@ -2,8 +2,8 @@ name: Build, Scan, Push and Verify Docker Image
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*'
 
 jobs:
   build-and-verify:
@@ -21,7 +21,7 @@ jobs:
           --health-retries=5
 
     steps:
-      - name: 📥 Checkout repository
+      - name: 📅 Checkout repository
         uses: actions/checkout@v4
 
       - name: 🧪 Run unit tests and generate coverage
@@ -51,9 +51,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_TOKEN }}
 
-      - name: 📌 Extract short commit SHA
-        id: vars
-        run: echo "sha_short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+      - name: 📌 Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
 
       - name: 🛠️ Build and push Docker image
         uses: docker/build-push-action@v5
@@ -62,9 +62,9 @@ jobs:
           push: true
           tags: |
             angiediazz/sistemasoperativos-parcial2-gi-api:latest
-            angiediazz/sistemasoperativos-parcial2-gi-api:${{ steps.vars.outputs.sha_short }}
+            angiediazz/sistemasoperativos-parcial2-gi-api:${{ steps.version.outputs.VERSION }}
             ghcr.io/angie-diaz-1/sistemasoperativos-parcial2-gi-api:latest
-            ghcr.io/angie-diaz-1/sistemasoperativos-parcial2-gi-api:${{ steps.vars.outputs.sha_short }}
+            ghcr.io/angie-diaz-1/sistemasoperativos-parcial2-gi-api:${{ steps.version.outputs.VERSION }}
 
       - name: 🔍 Scan Docker image with Trivy
         uses: aquasecurity/trivy-action@0.30.0
@@ -85,7 +85,7 @@ jobs:
           echo "📋 Mostrando contenedores activos:"
           docker ps
 
-          echo "📡 Logs del contenedor:"
+          echo "📱 Logs del contenedor:"
           docker logs test-container || true
 
           echo "🌐 Verificando endpoint de salud"
@@ -102,3 +102,13 @@ jobs:
           echo "✅ Healthcheck exitoso."
           docker stop test-container
           docker rm test-container
+
+      - name: 🔖 Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.VERSION }}
+          name: Release ${{ steps.version.outputs.VERSION }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
