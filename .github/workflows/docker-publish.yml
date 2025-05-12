@@ -154,6 +154,21 @@ jobs:
           
           echo "✅ InsertedID recibido: $inserted_id"
 
+          echo "📡 Probando GET a /users/$inserted_id"
+          get_response=$(curl --silent --fail http://localhost:8080/users/$inserted_id)
+          
+          echo "🔎 Respuesta del servidor (GET):"
+          echo "$get_response"
+          
+          if [[ "$get_response" != *"id"* ]]; then
+            echo "❌ La respuesta del GET no contiene 'id'."
+            docker stop test-container
+            docker rm test-container
+            exit 1
+          fi
+          
+          echo "✅ GET exitoso: el usuario fue encontrado correctamente."
+
 
 
           
