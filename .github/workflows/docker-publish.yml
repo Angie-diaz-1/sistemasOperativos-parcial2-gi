@@ -181,7 +181,7 @@ jobs:
           echo "🔎 Respuesta del servidor (DELETE):"
           echo "$delete_response"
 
-          if [[ "$delete_response" != *'"DeletedCount": 1'* ]]; then
+          if [[ "$delete_response" != *'"DeletedCount":1'* ]]; then
             echo "❌ La respuesta del DELETE no es válida."
             docker stop test-container
             docker rm test-container
