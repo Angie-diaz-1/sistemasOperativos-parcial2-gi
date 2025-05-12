@@ -131,6 +131,32 @@ jobs:
           fi
 
           echo "✅ Healthcheck exitoso."
+
+          echo "📨 Probando POST a /users"
+          response=$(curl --silent --fail --location --request POST http://localhost:8080/users \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "name": "nieve",
+              "lastname": "gatita blanca ",
+              "email": "nieve@example.com",
+              "password": "654321"
+            }')
+          
+          echo "🔎 Respuesta del servidor:"
+          echo "$response"
+          
+          inserted_id=$(echo "$response" | grep -oP '"InsertedID"\s*:\s*"\K[^"]+')
+          
+          if [ -z "$inserted_id" ]; then
+            echo "❌ No se encontró InsertedID en la respuesta."
+            exit 1
+          fi
+          
+          echo "✅ InsertedID recibido: $inserted_id"
+
+
+
+          
           docker stop test-container
           docker rm test-container
 
