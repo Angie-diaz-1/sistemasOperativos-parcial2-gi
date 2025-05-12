@@ -106,6 +106,35 @@ jobs:
           docker stop test-container
           docker rm test-container
 
+      - name: 🚀 Run container github and test healthcheck
+        run: |
+          docker run -d --name test-container --network host ghcr.io/angie-diaz-1/sistemasoperativos-parcial2-gi-api:latest
+
+          echo "⏳ Esperando que arranque el contenedor..."
+          sleep 10
+
+          echo "📋 Mostrando contenedores activos:"
+          docker ps
+
+          echo "📱 Logs del contenedor:"
+          docker logs test-container || true
+
+          echo "🌐 Verificando endpoint de salud"
+          response=$(curl --retry 5 --retry-delay 3 --fail --silent http://localhost:8080/health/)
+          echo "Respuesta: $response"
+
+          if [[ "$response" != *"Hola Docker!"* ]]; then
+            echo "❌ La respuesta no es válida."
+            docker stop test-container
+            docker rm test-container
+            exit 1
+          fi
+
+          echo "✅ Healthcheck exitoso."
+          docker stop test-container
+          docker rm test-container
+
+
       - name: 🔖 Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
