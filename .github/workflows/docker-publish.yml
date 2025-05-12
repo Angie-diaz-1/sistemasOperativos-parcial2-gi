@@ -15,9 +15,9 @@ jobs:
         ports:
           - 27017:27017
         options: >-
-          --health-cmd="mongosh --eval 'db.adminCommand(\"ping\")'" 
-          --health-interval=10s 
-          --health-timeout=5s 
+          --health-cmd="mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval=10s
+          --health-timeout=5s
           --health-retries=5
 
     steps:
@@ -44,11 +44,18 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: 🔐 Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
       - name: 📌 Extract short commit SHA
         id: vars
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
-      - name: 🛠️ Build and push Docker image
+      - name: 🛠️ Build and push Docker images
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -56,6 +63,8 @@ jobs:
           tags: |
             angiediazz/sistemasoperativos-parcial2-gi-api:latest
             angiediazz/sistemasoperativos-parcial2-gi-api:${{ steps.vars.outputs.sha_short }}
+            ghcr.io/${{ github.repository_owner }}/sistemasoperativos-parcial2-gi-api:latest
+            ghcr.io/${{ github.repository_owner }}/sistemasoperativos-parcial2-gi-api:${{ steps.vars.outputs.sha_short }}
 
       - name: 🔍 Scan Docker image with Trivy
         uses: aquasecurity/trivy-action@0.30.0
@@ -69,27 +78,21 @@ jobs:
       - name: 🚀 Run container and test healthcheck
         run: |
           docker run -d --name test-container --network host angiediazz/sistemasoperativos-parcial2-gi-api:latest
-
           echo "⏳ Esperando que arranque el contenedor..."
           sleep 10
-
           echo "📋 Mostrando contenedores activos:"
           docker ps
-
           echo "📡 Logs del contenedor:"
           docker logs test-container || true
-
           echo "🌐 Verificando endpoint de salud"
           response=$(curl --retry 5 --retry-delay 3 --fail --silent http://localhost:8080/health/)
           echo "Respuesta: $response"
-
           if [[ "$response" != *"Hola Docker!"* ]]; then
             echo "❌ La respuesta no es válida."
             docker stop test-container
             docker rm test-container
             exit 1
           fi
-
           echo "✅ Healthcheck exitoso."
           docker stop test-container
           docker rm test-container
