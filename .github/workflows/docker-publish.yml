@@ -155,7 +155,7 @@ jobs:
           echo "🔎 Respuesta del servidor (PUT):"
           echo "$put_response"
 
-          expected_response='{"MatchedCount":1,"ModifiedCount":0,"UpsertedCount":0,"UpsertedID":null}'
+          expected_response='{"MatchedCount":1,"ModifiedCount":1,"UpsertedCount":0,"UpsertedID":null}'
 
           normalized_put=$(echo "$put_response" | tr -d '[:space:]')
           normalized_expected=$(echo "$expected_response" | tr -d '[:space:]')
