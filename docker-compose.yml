@@ -13,7 +13,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: go-user-api
+    container_name: go-user-api-get
     ports:
       - "8080:8080"
     depends_on:

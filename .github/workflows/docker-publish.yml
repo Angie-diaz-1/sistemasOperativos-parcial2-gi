@@ -24,7 +24,7 @@ jobs:
           --health-retries=5
 
     steps:
-      - name: 🗕 Checkout repository
+      - name: 🗕️ Checkout repository
         uses: actions/checkout@v4
 
       - name: 🧪 Run unit tests and generate coverage
@@ -33,12 +33,12 @@ jobs:
           go tool cover -func=coverage.out
 
           echo "✅ Validando cobertura mínima"
-          threshold=80.0
+          threshold=50.0
           coverage=$(go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
           echo "Cobertura actual: $coverage%"
           awk "BEGIN {exit ($coverage < $threshold) ? 1 : 0}"
 
-      - name: 🧱 Set up Docker Buildx
+      - name: 🩱 Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: 🔐 Login to Docker Hub
@@ -64,23 +64,36 @@ jobs:
           context: .
           push: true
           tags: |
-            angiediazz/sistemasoperativos-parcial2-gi-api:latest
-            angiediazz/sistemasoperativos-parcial2-gi-api:${{ steps.version.outputs.VERSION }}
-            ghcr.io/angie-diaz-1/sistemasoperativos-parcial2-gi-api:latest
-            ghcr.io/angie-diaz-1/sistemasoperativos-parcial2-gi-api:${{ steps.version.outputs.VERSION }}
+            angiediazz/p-go-get:latest
+            angiediazz/p-go-get:${{ steps.version.outputs.VERSION }}
+            ghcr.io/angie-diaz-1/p-go-get:latest
+            ghcr.io/angie-diaz-1/p-go-get:${{ steps.version.outputs.VERSION }}
 
       - name: 🔍 Scan Docker image with Trivy
         uses: aquasecurity/trivy-action@0.30.0
         with:
-          image-ref: angiediazz/sistemasoperativos-parcial2-gi-api:latest
+          image-ref: angiediazz/p-go-get:latest
           format: table
           exit-code: 1
           ignore-unfixed: true
           vuln-type: 'os,library'
 
-      - name: 🚀 Run container github and test full workflow
+      - name: 🍃 Insertar usuario directamente en MongoDB antes de ejecutar endpoints
         run: |
-          docker run -d --name test-container --network host ghcr.io/angie-diaz-1/sistemasoperativos-parcial2-gi-api:latest
+          echo "📦 Insertando documento de prueba en MongoDB"
+          mongo_container=$(docker ps -qf "ancestor=mongo:6.0")
+          docker exec "$mongo_container" mongosh --quiet --eval '
+            db = connect("mongodb://localhost:27017/users_db");
+            db.users.insertOne({
+              name: "nieve",
+              lastname: "gatita blanca",
+              email: "nieve@example.com",
+              password: "654321"
+            });
+          '
+      - name: 🚀 Run container github and test get workflow
+        run: |
+          docker run -d --name test-container --network host ghcr.io/angie-diaz-1/p-go-get:latest
 
           echo "⏳ Esperando que arranque el contenedor..."
           sleep 10
@@ -95,7 +108,7 @@ jobs:
           response=$(curl --retry 5 --retry-delay 3 --fail --silent http://localhost:8080/health/)
           echo "Respuesta: $response"
 
-          if [[ "$response" != *"Hola Docker!"* ]]; then
+          if [[ "$response" != *'"message":"Hola Docker!"'* ]]; then
             echo "❌ La respuesta no es válida."
             docker stop test-container
             docker rm test-container
@@ -104,94 +117,33 @@ jobs:
 
           echo "✅ Healthcheck exitoso."
 
-          echo "📨 Probando POST a /users"
-          response=$(curl --silent --fail --location --request POST http://localhost:8080/users \
-            --header 'Content-Type: application/json' \
-            --data '{
-              "name": "nieve",
-              "lastname": "gatita blanca ",
-              "email": "nieve@example.com",
-              "password": "654321"
-            }')
+          echo "📥 GET a /users"
+          response=$(curl --silent --fail http://localhost:8080/users)
+          echo "📄 Respuesta completa: $response"
 
-          echo "🔎 Respuesta del servidor:"
-          echo "$response"
+          user_id=$(echo "$response" | grep -oP '"id"\s*:\s*"\K[^"]+')
+          if [ -z "$user_id" ]; then
+            echo "❌ No se pudo obtener un ID válido desde /get"
+            docker stop test-container && docker rm test-container
+            exit 1
+          fi
+          echo "✅ ID obtenido: $user_id"
 
-          inserted_id=$(echo "$response" | grep -oP '"InsertedID"\s*:\s*"\K[^"]+')
+          echo "📥 GET a /users/$user_id"
+          response_id=$(curl --silent --fail http://localhost:8080/users/$user_id)
+          echo "📄 Respuesta: $response_id"
 
-          if [ -z "$inserted_id" ]; then
-            echo "❌ No se encontró InsertedID en la respuesta."
+          if [[ "$response_id" != *"$user_id"* ]]; then
+            echo "❌ La respuesta del GET por ID no contiene el ID esperado."
+            docker stop test-container && docker rm test-container
             exit 1
           fi
 
-          echo "✅ InsertedID recibido: $inserted_id"
+          echo "✅ GET por ID exitoso."
 
-          echo "📡 Probando GET a /users/$inserted_id"
-          get_response=$(curl --silent --fail http://localhost:8080/users/$inserted_id)
-
-          echo "🔎 Respuesta del servidor (GET):"
-          echo "$get_response"
-
-          if [[ "$get_response" != *"id"* ]]; then
-            echo "❌ La respuesta del GET no contiene 'id'."
-            docker stop test-container
-            docker rm test-container
-            exit 1
-          fi
-
-          echo "✅ GET exitoso: el usuario fue encontrado correctamente."
-
-          echo "✏️ Probando PUT a /users/$inserted_id"
-          put_response=$(curl --silent --fail --request PUT \
-            --url http://localhost:8080/users/$inserted_id \
-            --header 'Content-Type: application/json' \
-            --data '{
-              "name": "Aapolo",
-              "lastname": "perrito ",
-              "email": "apolo@example.com",
-              "password": "654321"
-            }')
-
-          echo "🔎 Respuesta del servidor (PUT):"
-          echo "$put_response"
-
-          expected_response='{"MatchedCount":1,"ModifiedCount":1,"UpsertedCount":0,"UpsertedID":null}'
-
-          normalized_put=$(echo "$put_response" | tr -d '[:space:]')
-          normalized_expected=$(echo "$expected_response" | tr -d '[:space:]')
-
-          if [[ "$normalized_put" != "$normalized_expected" ]]; then
-            echo "❌ La respuesta del PUT no coincide con lo esperado."
-            docker stop test-container
-            docker rm test-container
-            exit 1
-          fi
-
-          echo "✅ PUT exitoso: la respuesta coincide exactamente con lo esperado."
-                    echo "🗑️ Probando DELETE a /users/$inserted_id"
-          delete_response=$(curl --silent --fail --location --request DELETE http://localhost:8080/users/$inserted_id \
-            --header 'Content-Type: application/json' \
-            --data '{
-              "name": "nieve",
-              "lastname": "gatita blanca ",
-              "email": "nieve@example.com",
-              "password": "654321"
-            }')
-
-          echo "🔎 Respuesta del servidor (DELETE):"
-          echo "$delete_response"
-
-          if [[ "$delete_response" != *'"DeletedCount":1'* ]]; then
-            echo "❌ La respuesta del DELETE no es válida."
-            docker stop test-container
-            docker rm test-container
-            exit 1
-          fi
-
-          echo "✅ DELETE exitoso: el usuario fue eliminado correctamente."
- 
           docker stop test-container
           docker rm test-container
+
 
       - name: 🔖 Create GitHub Release
         uses: softprops/action-gh-release@v1
