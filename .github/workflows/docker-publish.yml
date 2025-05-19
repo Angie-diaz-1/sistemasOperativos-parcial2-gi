@@ -138,9 +138,7 @@ jobs:
             docker stop test-container && docker rm test-container
             exit 1
           fi
-
           echo "✅ GET por ID exitoso."
-
           docker stop test-container
           docker rm test-container
 
